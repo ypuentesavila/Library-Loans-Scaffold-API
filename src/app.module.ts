@@ -1,9 +1,14 @@
-import { Module } from '@nestjs/common';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation.schema';
 import { HealthModule } from './modules/health/health.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { ItemsModule } from './modules/items/items.module';
+import { LoansModule } from './modules/loans/loans.module';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -11,9 +16,7 @@ import { HealthModule } from './modules/health/health.module';
       isGlobal: true,
       load: [configuration],
       validationSchema,
-      validationOptions: {
-        abortEarly: false,
-      },
+      validationOptions: { abortEarly: false },
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -30,6 +33,13 @@ import { HealthModule } from './modules/health/health.module';
       }),
     }),
     HealthModule,
+    AuthModule,
+    ItemsModule,
+    LoansModule,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
   ],
 })
 export class AppModule {}
