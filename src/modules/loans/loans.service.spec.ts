@@ -6,6 +6,7 @@ import { LoansService } from './loans.service';
 import { Loan, LoanStatus } from './entities/loan.entity';
 import { Item, ItemType } from '../items/entities/item.entity';
 import { User, UserRole } from '../auth/entities/user.entity';
+import { Reservation } from '../reservations/entities/reservation.entity';
 
 const makeUser = (): User => ({
   id: 'user-uuid-1',
@@ -57,6 +58,7 @@ describe('LoansService', () => {
   };
   let userRepo: { findOne: jest.Mock };
   let itemRepo: { findOne: jest.Mock };
+  let reservationRepo: { findOne: jest.Mock; save: jest.Mock; find: jest.Mock };
 
   beforeEach(async () => {
     loanRepo = {
@@ -69,6 +71,11 @@ describe('LoansService', () => {
     };
     userRepo = { findOne: jest.fn() };
     itemRepo = { findOne: jest.fn() };
+    reservationRepo = {
+      findOne: jest.fn().mockResolvedValue(null),
+      save: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -76,6 +83,7 @@ describe('LoansService', () => {
         { provide: getRepositoryToken(Loan), useValue: loanRepo },
         { provide: getRepositoryToken(User), useValue: userRepo },
         { provide: getRepositoryToken(Item), useValue: itemRepo },
+        { provide: getRepositoryToken(Reservation), useValue: reservationRepo },
         {
           provide: ConfigService,
           useValue: {
@@ -141,7 +149,7 @@ describe('LoansService', () => {
 
   describe('returnLoan', () => {
     it('calculates fine: dueAt 5 days ago → fineAmount = 2.50 (R4)', async () => {
-      const dueAt = new Date(Date.now() - 5 * 86_400_000);
+      const dueAt = new Date(Date.now() - 5 * 86_400_000 + 60_000);
       const loan = makeLoan({ dueAt, status: LoanStatus.ACTIVE });
       loanRepo.findOne.mockResolvedValue(loan);
       loanRepo.save.mockImplementation((l: Loan) => Promise.resolve(l));

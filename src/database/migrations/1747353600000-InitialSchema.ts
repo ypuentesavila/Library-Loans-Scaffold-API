@@ -2,9 +2,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class InitialSchema1747353600000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `CREATE TYPE user_role_enum AS ENUM ('admin', 'librarian', 'member')`,
-    );
+    await queryRunner.query(`CREATE TYPE user_role_enum AS ENUM ('admin', 'librarian', 'member')`);
     await queryRunner.query(`
       CREATE TABLE users (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -20,9 +18,7 @@ export class InitialSchema1747353600000 implements MigrationInterface {
     `);
     await queryRunner.query(`CREATE UNIQUE INDEX "IDX_users_email" ON users(email)`);
 
-    await queryRunner.query(
-      `CREATE TYPE item_type_enum AS ENUM ('book', 'magazine', 'equipment')`,
-    );
+    await queryRunner.query(`CREATE TYPE item_type_enum AS ENUM ('book', 'magazine', 'equipment')`);
     await queryRunner.query(`
       CREATE TABLE items (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -57,12 +53,8 @@ export class InitialSchema1747353600000 implements MigrationInterface {
           REFERENCES items(id) ON DELETE RESTRICT
       )
     `);
-    await queryRunner.query(
-      `CREATE INDEX "IDX_loans_item_status" ON loans("itemId", status)`,
-    );
-    await queryRunner.query(
-      `CREATE INDEX "IDX_loans_user_status" ON loans("userId", status)`,
-    );
+    await queryRunner.query(`CREATE INDEX "IDX_loans_item_status" ON loans("itemId", status)`);
+    await queryRunner.query(`CREATE INDEX "IDX_loans_user_status" ON loans("userId", status)`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

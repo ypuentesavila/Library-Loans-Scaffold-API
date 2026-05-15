@@ -5,20 +5,12 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../../auth/entities/user.entity';
 import { Item } from '../../items/entities/item.entity';
 
-export enum LoanStatus {
-  ACTIVE = 'active',
-  RETURNED = 'returned',
-  OVERDUE = 'overdue',
-  LOST = 'lost',
-}
-
-@Entity('loans')
-export class Loan {
+@Entity('reservations')
+export class Reservation {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -36,24 +28,15 @@ export class Loan {
   @JoinColumn({ name: 'itemId' })
   item: Item;
 
-  @Column({ type: 'timestamptz' })
-  loanedAt: Date;
-
-  @Column({ type: 'timestamptz' })
-  dueAt: Date;
-
-  @Column({ type: 'timestamptz', nullable: true })
-  returnedAt: Date | null;
-
-  @Column({ type: 'enum', enum: LoanStatus, default: LoanStatus.ACTIVE })
-  status: LoanStatus;
-
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  fineAmount: number;
-
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @Column({ type: 'timestamptz', nullable: true })
+  fulfilledAt: Date | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  cancelledAt: Date | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  expiresAt: Date | null;
 }

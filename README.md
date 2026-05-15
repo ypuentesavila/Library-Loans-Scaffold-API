@@ -43,7 +43,42 @@ npm test
 
 ## Bonos implementados
 
-Ninguno (solo parte obligatoria).
+| Bono | Descripción | Extra |
+|---|---|---|
+| B1 | Cola FIFO de reservas (`/reservations`) — R-B1.1 a R-B1.4 implementadas | +8% |
+| B2 | Refresh tokens stateful (`/auth/refresh`, `/auth/logout`) — tabla `refresh_tokens` en BD | +5% |
+| B3 | GitHub Actions CI (`.github/workflows/ci.yml`) + Dockerfile para build Docker | +4%+1% |
+| B4 | Suite e2e con supertest (`test/app.e2e-spec.ts`) + matriz FSM parametrizada con `it.each` | +3% |
+
+### B1 — Cola FIFO de reservas
+
+Endpoints nuevos:
+- `POST /reservations` — crear reserva (solo si item está en préstamo activo/overdue)
+- `GET /reservations` — listar (member ve solo las suyas; admin/librarian ven todas)
+- `DELETE /reservations/:id` — cancelar (soft: `cancelledAt = now()`)
+
+Reglas:
+- R-B1.1: máximo 1 reserva pendiente por usuario por item → 409
+- R-B1.2: al devolver un loan, se fulfills la primera reserva FIFO (`fulfilledAt = now()`, `expiresAt = now() + 48h`)
+- R-B1.3: si `expiresAt < now()`, la reserva expira; en el siguiente return se pasa a la siguiente
+- R-B1.4: si hay reservas pendientes, solo el primero de la cola puede crear el loan → 403 para otros
+
+### B2 — Refresh tokens stateful
+
+- `POST /auth/register` y `POST /auth/login` devuelven `{ accessToken, refreshToken, user }`
+- `POST /auth/refresh` (público) — valida firma + lookup en BD (no revocado, no expirado) → nuevo `accessToken`
+- `POST /auth/logout` (autenticado) — marca `revokedAt = now()`; ese refresh falla con 403 en adelante
+
+### B3 — GitHub Actions CI
+
+`.github/workflows/ci.yml`: checkout → Node 20 → `npm ci` → `npm run lint` → `npm test` → `docker build`.
+Incluye servicio Postgres efímero para tests que lo requieran.
+
+### B4 — E2E + Matriz FSM
+
+`test/app.e2e-spec.ts`:
+- Flujo completo: `register → login → refresh → POST /items → POST /loans → PATCH /loans/:id/return`
+- Matriz FSM con `it.each`: 1 transición válida (`active → returned`) + 4 inválidas (`returned → returned`, `returned → lost`, `lost → returned`, `lost → lost`) → HTTP 400
 
 ## Scripts disponibles
 
