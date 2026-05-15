@@ -1,49 +1,49 @@
-# Library Loans API — Scaffold de examen parcial
+# Library Loans API — ISIS 3710 Parcial 2
 
-Scaffold base para el examen parcial del curso **ISIS 3710 — Programación con Tecnologías Web**.
+Sistema de gestión de préstamos de biblioteca. NestJS + TypeORM + PostgreSQL.
 
-> Este repositorio es el **punto de partida**. El enunciado completo será compartido durante el examen. El proyecto de referencia (con patrones aplicados) es [MediTrack](https://github.com/wareval0/MediTrack-API).
-
-## Qué incluye este scaffold
-
-- **NestJS 10** inicializado.
-- **Docker Compose** con Postgres 16-alpine.
-- **`ConfigModule`** con validación Joi al arranque (todas las variables requeridas están en `.env.example`).
-- **`ValidationPipe`** global con `whitelist`, `forbidNonWhitelisted`, `transform`.
-- **Swagger UI** montado en `/api/docs`.
-- **Módulo `health`** con `/api/health/live` y `/api/health/ready` como referencia mínima de un módulo NestJS.
-- **`@Public()` decorator** en [src/common/decorators/public.decorator.ts](src/common/decorators/public.decorator.ts) listo para usar cuando implementes auth.
-- **CLI de TypeORM** configurado en [src/database/data-source.ts](src/database/data-source.ts) — corre `npm run migration:generate` para crear migraciones.
-
-## Qué NO incluye (lo implementas tú)
-
-- Módulo `auth` (entidad `User`, register, login, JWT strategy, guards).
-- Entidades `Item` y `Loan`.
-- Cualquier migración.
-- Tests.
-
-Ver el enunciado para los pesos exactos de cada parte.
-
-## Arranque rápido
+## Arranque rápido (evaluación)
 
 ```bash
-# 1) Variables de entorno
 cp .env.example .env
-
-# 2) Base de datos
 docker compose up -d
-
-# 3) Dependencias
 npm install
-
-# 4) Build
-npm run build
-
-# 5) Arrancar la app en modo desarrollo
+npm run migration:run
 npm run start:dev
 ```
 
-Abre [http://localhost:3000/api/docs](http://localhost:3000/api/docs) y deberías ver el Swagger UI con el módulo `health` ya disponible.
+Swagger UI: [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
+
+## Credenciales de prueba
+
+No hay seed automático. Crear usuario vía `POST /api/auth/register`. Para cambiar rol (`admin`/`librarian`), modificar directamente en BD:
+
+```sql
+UPDATE users SET role = 'admin' WHERE email = 'tu@email.com';
+```
+
+## Decisión: transición automática a `overdue`
+
+No hay job cron. La transición `active → overdue` es **lazy**: al consultar `GET /loans` o `GET /loans/:id`, el servicio detecta préstamos `active` donde `dueAt < now()` y actualiza su `status` a `overdue` en la base de datos en ese momento.
+
+Ventaja: sin procesos en background ni dependencias adicionales. El costo: un préstamo no aparece como `overdue` hasta que alguien lo consulte.
+
+## Tests
+
+```bash
+npm test
+```
+
+5 tests unitarios de `LoansService` (sin base de datos real, mocks de repositorio):
+- Crear préstamo exitoso (item disponible, usuario bajo límite, fechas válidas)
+- R2: item ya prestado → `ConflictException`
+- R3: usuario con 3 activos → `ConflictException`
+- R4: dueAt 5 días atrás → `fineAmount = 2.50`
+- R5: devolver loan ya devuelto → `BadRequestException`
+
+## Bonos implementados
+
+Ninguno (solo parte obligatoria).
 
 ## Scripts disponibles
 
